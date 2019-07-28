@@ -9,3 +9,6 @@ pip3 install -r requirements.txt
 This implementation requires:
  - numpy
  - fbpca
+ 
+ ## Usage
+ See `demo.ipynb`
