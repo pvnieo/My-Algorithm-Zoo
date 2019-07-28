@@ -5,55 +5,62 @@ import numpy as np
 import fbpca
 
 
+def norm2(X):
+    return fbpca.pca(X, k=1, raw=True)[1][0]
+
+
+def cond1(M, L, S, eps1):
+    return np.linalg.norm(M - L - S, ord='fro') <= eps1 * np.linalg.norm(M, ord='fro')
+
+
 def shrinkage_operator(X, tau):
     return np.sign(X) * np.max(np.abs(X) - tau, 0)
 
 
 def sv_thresh_operator(X, tau, rank):
     rank = min(rank, np.min(X.shape))
-    U, s, Vt = fbpca.pcp(X, rank)
+    U, s, Vt = fbpca.pca(X, rank)
     s -= tau
     svp = (s > 0).sum()
-    return U[:, :svp] @ np.diag(s[:svp]) @ Vt[:, :svp], svp
+    return U[:, :svp] @ np.diag(s[:svp]) @ Vt[:svp], svp
 
 
-def l2_norm(X):
-    return fbpca.pca(X, k=1, raw=True)[1][0]
-
-
-def has_converged(M, L, S, eps):
-    return np.linalg.norm(M - L - S, ord='fro') <= eps * np.linalg.norm(M, ord='fro')
-
-
-def pcp(M, maxiter=10, eps=1e-7):
+def pcp(M, maxiter=10):
     trans = False
     if M.shape[0] < M.shape[1]:
         M = M.T
         trans = True
-    # initialization
-    mu = 0.25 * np.prod(M.shape) / np.sum(np.abs(M))
+    norm0 = np.linalg.norm(M, ord='fro')
+
+    # recommended parameters
+    eps1, eps2 = 1e-7, 1e-5
+    rho = 1.6
+    mu = 1.25 / norm2(M)
     lamda = 1 / np.sqrt(M.shape[0])
-    sv = 1
-    S = np.zeros_like(M)
-    Y = M / max(l2_norm(M), np.max(np.abs(M / lamda)))
+    sv = 10
+    # initialization
+    S, S_1, L = np.zeros_like(M), np.zeros_like(M), np.zeros_like(M)
+    Y = M / max(norm2(M), np.max(np.abs(M / lamda)))
 
     # main loop
     since = time()
 
-    for _ in range(maxiter):
-        L, svp = sv_thresh_operator(M - S + Y / mu, 1 / mu, sv)
+    for i in range(maxiter):
+        S_1 = S.copy()
         S = shrinkage_operator(M - L + Y / mu, lamda / mu)
-        Y = Y + mu * (M - L - S)
-
-        # update mu and sv
-        sv = svp + 1 if svp < sv else min(M.shape[1], svp + round(0.05 * M.shape[1]))
-        mu = mu
+        L, svp = sv_thresh_operator(M - S + Y / mu, 1 / mu, sv)
+        Y += mu * (M - L - S)
 
         # check for convergence
-        if has_converged(M, L, S, eps):
+        cond2 = (mu * np.linalg.norm(S - S_1, ord='fro') / norm0) < eps2
+        if cond1(M, L, S, eps1) and cond2:
             print(f'PCP converged! Took {round(time()-since, 2)} s')
             break
+
+        # update mu and sv
+        sv = svp + (1 if svp < sv else round(0.05 * M.shape[1]))
+        mu = mu * rho if cond2 else mu
     else:
         print(f'Convergence Not reached! Took {round(time()-since, 2)} s')
 
-    return L, S if not trans else L.T, S.T
+    return (L, S) if not trans else (L.T, S.T)
