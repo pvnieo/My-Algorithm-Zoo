@@ -11,4 +11,4 @@ This implementation requires:
  - fbpca
  
  ## Usage
- See `demo.ipynb`
+ See [demo.ipynb](demo.ipynb)
