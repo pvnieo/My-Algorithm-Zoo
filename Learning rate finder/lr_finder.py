@@ -7,7 +7,7 @@ import torch
 
 
 class LRFinder:
-    """Implements Leslie N. Smith's Learning rate finder method. Use `.fin()` method to search for the best learning rate.
+    """Implements Leslie N. Smith's Learning rate finder method. Use `.find()` method to search for the best learning rate.
        use `.plot()` method to plot the loss
     """
 
