@@ -35,11 +35,11 @@ class LRFinder:
         """Performs the learning rate range test.
 
         Arguments:
-            train_loader {torch.utils.data.DataLoader} -- Training set data loader
+            train_loader {torch.utils.data.DataLoader} -- Training set dataloader
 
         Keyword Arguments:
             val_loader {torch.utils.data.DataLoader} -- Validation set dataloader. If None, range test will be performed only with train_loader (default: {None})
-            num_iter {int} -- Maximum number of iteration. Determines the discretisation of the interval (default: {100})
+            num_iter {int} -- Maximum number of iteration. Determines the discretization of the interval (default: {100})
             init_value {float} -- Minimun learning rate to start with. (default: {1e-6})
             final_value {float} -- Maximum learnig rate before stopping the range test (default: {10.})
             div_th {int} -- Stop the range test if the loss attains div_th * min_loss (default: {5})
